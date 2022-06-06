@@ -1,0 +1,29 @@
+# plot data
+plt.figure(figsize=(8, 8))
+plt.scatter(x[:, 0], x[:, 1], s=20)
+
+# Run the Kmeans algorithm and get the index of data points clusters
+ssd = []
+list_k = list(range(1, 10))
+
+for k in list_k:
+    km = KMeans(n_clusters=k)
+    km.fit(x)
+    ssd.append(km.inertia_)
+
+# Plot sse against k
+plt.figure(figsize=(8, 8))
+plt.plot(list_k, ssd, '-o')
+plt.xlabel(r'Number of clusters *k*')
+plt.ylabel('Sum of squared distance')
+
+# plot kmeans according to scree plot
+kmeans = KMeans(n_clusters=3)
+kmeans.fit(x)
+y_kmeans = kmeans.predict(x)
+
+plt.figure(figsize=(8, 8))
+plt.scatter(x[:, 0], x[:, 1], c=y_kmeans, s=40, cmap='viridis')
+
+centers = kmeans.cluster_centers_
+plt.scatter(centers[:, 0], centers[:, 1], c='red', s=80, alpha=0.8);
