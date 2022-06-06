@@ -10,76 +10,65 @@ import numpy as np
 import csv
 
 
-# In[38]:
+# In[188]:
 
 
 df = pd.read_csv("FoodNutrients.csv")
 
 
-# In[39]:
+# In[189]:
 
 
-df.head()
+num_df = df.drop(columns=['Public Food Key', 'Food Name'])
 
 
-# In[43]:
+# In[190]:
 
 
-df = df.drop(columns=['Public Food Key', 'Food Name'])
+data = num_df[1:]
 
 
-# In[44]:
+# In[191]:
 
 
-df = df[1:]
+data.head()
 
 
-# In[45]:
-
-
-df.head()
-
-
-# In[48]:
-
+# # Inputation
 
 # knn imputation transform 
+
+# In[194]:
+
+
 from numpy import isnan
 from sklearn.impute import KNNImputer
-# load dataset
 
-# split into input and output elements
-#data = dataframe.values
-#ix = [i for i in range(data.shape[1]) if i != 9]
-# X, y = data[:, ix], data[:, 9]
-
-# print total missing
-# print('Missing: %d' % sum(isnan(df).flatten()))
 # define imputer
 imputer = KNNImputer(n_neighbors=5, weights='uniform', metric='nan_euclidean')
 # fit on the dataset
-imputer.fit(df)
+imputer.fit(data)
 # transform the dataset
-Xtrans = imputer.transform(df)
-# print total missing
-# print('Missing: %d' % sum(isnan(Xtrans).flatten()))
-
-
-# In[61]:
-
-
+Xtrans = imputer.transform(data)
 for xt in Xtrans:
     xt[0] = str(xt[0])[:2]
 
 
-# In[64]:
+# In[196]:
 
 
-trans_df = pd.DataFrame(Xtrans, columns=df.columns)
+trans_df = pd.DataFrame(Xtrans, columns=num_df.columns)
+
+
+# In[197]:
+
+
 trans_df
 
 
-# In[69]:
+# PCA
+
+# In[199]:
 
 
 from sklearn.decomposition import PCA
@@ -88,29 +77,33 @@ df1 = trans_df.drop(['Classification'], axis=1)
 df1.head()
 
 
-# In[70]:
+# In[200]:
 
 
 reduction = pca.fit_transform(df1)
 
 
-# In[132]:
+# In[213]:
 
+
+from sklearn import preprocessing
+le = preprocessing.LabelEncoder()
 
 X = reduction
-y = trans_df['Classification']
-y -= 11
+labels = trans_df['Classification']
+le.fit(labels)
+y = le.transform(labels)
 
 
-# In[133]:
+# In[214]:
 
 
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(
-          X, y, test_size=0.1, random_state=42)
+          X, y, test_size=0.1, random_state=29)
 
 
-# In[85]:
+# In[215]:
 
 
 from sklearn.ensemble import RandomForestClassifier
@@ -118,29 +111,17 @@ from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
 
 
-"""
-n_estimators=100, *, 
-criterion='gini', 
-max_depth=None, 
-min_samples_split=2, 
-min_samples_leaf=1, 
-min_weight_fraction_leaf=0.0, 
-max_features='sqrt', 
-max_leaf_nodes=None, 
-"""
+# In[240]:
 
 
-# In[87]:
-
-
-clf = RandomForestClassifier(n_estimators=100 ,max_depth=5 , random_state=7)
+clf = RandomForestClassifier(n_estimators=80 ,max_depth=7 , random_state=7)
 clf.fit(X_train,y_train)
 
 y_pred = clf.predict(X_test)
 accuracy_score(y_pred, y_test)
 
 
-# In[98]:
+# In[217]:
 
 
 from sklearn.neural_network import MLPClassifier
@@ -150,45 +131,36 @@ y_pred = clf.predict(X_test)
 accuracy_score(y_pred, y_test)
 
 
-# In[166]:
+# In[288]:
 
 
-from numpy import loadtxt
 from keras.models import Sequential
 from keras.layers import Dense
-from tensorflow import keras
+import tensorflow as tf
+tf.random.set_seed(42)
 
 
-# In[167]:
+# In[296]:
 
 
 model = Sequential()
 # 100 50 = 91.85
 # 50 40 = 85
-model.add(Dense(96, input_dim=8, activation='relu'))
-model.add(Dense(48, activation='relu'))
-model.add(Dense(24, activation='sigmoid'))
+model.add(Dense(66, input_dim=8, activation='relu'))
+model.add(Dense(44, activation='relu'))
+model.add(Dense(22, activation='sigmoid'))
 
-
-# In[182]:
-
-
-"""
-'sparse_categorical_crossentropy'
-'mean_squared_error'
-
-"""
-opt = keras.optimizers.Adam(learning_rate=0.000001)
+opt = tf.keras.optimizers.Adam(learning_rate=0.001)
 model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
 
-# In[186]:
+# In[297]:
 
 
-model.fit(X_train, y_train, epochs=80, batch_size=16, validation_split=0.3)
+model.fit(X_train, y_train, epochs=80, batch_size=32, validation_split=0.2)
 
 
-# In[187]:
+# In[298]:
 
 
 _, accuracy = model.evaluate(X, y)
